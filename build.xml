@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<project name="AppBuilder" default="deploy" basedir=".">
+	<property file="build.properties"/>
+	<property environment="env" />
+	
+	<path id="classpath">
+	 	<fileset dir="${lib.dir}" includes="*.jar"/>
+		<fileset dir="${env.JBOSS_HOME}/common/lib" includes="*.jar"/>
+	</path>
+	
+	<target name="clean">
+		<echo>Cleaning the ${build.dir}</echo>
+		<delete dir="${build.dir}"/>
+	</target>
+	
+	<target name="init" depends="clean">
+		<echo>Creating the build directory</echo>
+		<mkdir dir="${build.dir}/WEB-INF/classes"/>
+		<mkdir dir="${build.dir}/WEB-INF/lib"/>
+	</target>
+	
+	<target name="compile" depends="init">
+		<echo>Compile the source files</echo>
+		<javac srcdir="${src.dir}" destdir="${build.dir}/WEB-INF/classes" debug="${debug}">
+			<classpath refid="classpath"/>
+		</javac>
+	</target>
+	
+	<target name="copy" depends="compile">
+		
+		<copy todir="${build.dir}/WEB-INF">
+			<fileset dir="${root.dir}/WEB-INF">
+				<include name="*.xml"/>
+			</fileset>
+		</copy>
+		
+		<copy todir="${build.dir}" >
+			<fileset dir="${root.dir}">
+    			<include name="*.jsp"/>
+				<include name="*.gif"/>
+				<include name="/WEB-INF/*.jar"/>
+			</fileset>
+		</copy>
+		<copy todir="${build.dir}/WEB-INF/classes">
+			<fileset dir="${root.dir}">
+				<include name="*.xml"/>
+			</fileset>
+		</copy>
+	</target>
+
+	<target name="war" depends="copy">
+		<echo>Building the war file</echo>
+		<war destfile="${root.dir}/${project.name}.war" webxml="${root.dir}/WEB-INF/web.xml">
+			<fileset dir="${build.dir}"/>
+		</war>
+		<delete dir="${build.dir}"/>
+	</target>
+	
+	<target name="deploy" depends="war">
+		<echo>Deploying in ${env.JBOSS_HOME}\server\default\deploy</echo>
+		<copy file="${root.dir}/${project.name}.war" todir="${env.JBOSS_HOME}\server\default\deploy" />
+		<delete file="${build.dir}/${project.name}.war" />
+	</target>
+</project>
